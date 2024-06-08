@@ -666,3 +666,319 @@ export default App;
     1、 value  选中后的值
     2、checked 控制是否选中
 ```
+
+## 10、组件通信(父=>子)
+
+### 10.1 基本使用
+```
+    1、传递方式与函数组件一致
+    2、接收时通过 this.props.mes 获取
+```
+```js
+import React from 'react'
+class Son extends React.PureComponent{
+  render() {
+    return (
+      <>
+        <h3>子组件</h3>
+        {/* 2、接收 */}
+        <span>接收：{this.props.mes}</span>
+      </>
+    )
+  }
+}
+class App extends React.PureComponent {
+  state = {
+    sonMes:'son'
+  }
+  render() {
+    return (
+      <div>
+        <h2>父组件</h2>
+        {/* 1、传递 */}
+        <Son mes={ this.state.sonMes} />
+      </div>
+    )
+  }
+}
+export default App;
+```
+
+### 10.2 类型限制
+```
+  1、手写验证方法
+  2、借助 proptypes 库
+```
+```js
+// 1、props 类型限制
+Son.propTypes = {
+  // (1)手写
+  mes: function (props) {
+    if (typeof props.mes !== 'string') {
+      throw new Error('mes 必须为字符串')
+    }
+  },
+  // (2)使用库
+  color:proptypes.number
+}
+// 2、props 默认值限制
+Son.defaultProps = {
+  mes: '默认值',
+  color:'绿色'
+}
+```
+
+## 11、插槽
+```
+    传递html元素，借助【props.children】获取
+      1、传递：写在子组件内容区域
+      2、接收: this.props.children
+```
+
+### 11.1 具名插槽
+```js
+import React from 'react'
+
+class Son extends React.PureComponent{
+  render() {
+    return (
+      <>
+        {/* 2、接收 */}
+        <span>接收：{this.props.children}</span>
+      </>
+    )
+  }
+}
+
+class App extends React.PureComponent {
+  render() {
+    return (
+      <div>
+        {/* 1、传递 */}
+        <Son>
+          <li>内容</li>
+          <li>内容</li>
+          <li>内容</li>
+        </Son>
+      </div>
+    )
+  }
+}
+
+export default App;
+```
+
+### 11.2 作用域插槽
+```
+    1、父组件传递函数，函数返回值为html元素
+    2、子组件调用时，传递数据，渲染jsx
+```
+```js
+import React from 'react'
+
+class Son extends React.PureComponent{
+  state = {
+    data:'作用域插槽'
+  }
+  render() {
+    return (
+      <>
+        {/* 2、接收 */}
+        {/* 作用域插槽 */}
+        {this.props.slot(this.state.data)}
+      </>
+    )
+  }
+}
+
+class App extends React.PureComponent {
+  render() {
+    return (
+      <div>
+        {/* 1、传递 */}
+        <Son slot={(slot) => <div>{ slot}</div>}></Son>
+      </div>
+    )
+  }
+}
+
+export default App;
+```
+
+## 12、组件通信(子=>父)
+```
+  1、父组件向子组件传递方法
+  2、子组件调用并传递数据
+  3、父组件拿到数据
+```
+```js
+import React from 'react'
+
+class Son extends React.PureComponent{
+  state = {
+    data:'作用域插槽'
+  }
+  render() {
+    return (
+      <>
+        {/* 2、子组件调用并传递数据 */}
+        <button onClick={() => {
+          this.props.onActive('data')
+        }}>
+          点击传递
+        </button>
+      </>
+    )
+  }
+}
+
+class App extends React.PureComponent {
+  // 3、父组件拿到数据
+  handle = (data) => {
+    console.log('接收数据',data);
+  }
+  render() {
+    return (
+      <div>
+        {/* 1、父组件向子组件传递方法 */}
+        <Son onActive={this.handle} />
+      </div>
+    )
+  }
+}
+
+export default App;
+```
+
+## 13、生命周期
+### 13.1 生命周期介绍
+```
+    0、渲染 render
+        初次渲染 更新时执行
+    1、挂载 componentDidMount
+        (1)数据请求
+        (2)echart绘制  
+    2、更新
+        shouldComponentUpdate(是否更新) 
+            性能优化 PureComponent
+        componentDidUpdate
+    3、卸载 componentDidUnmount
+        销毁定时器
+```
+
+### 13.2 更新原理
+```
+    1、vue 
+        (1)使用了【get】依赖收集，把受当前数据影响的部分收集起来
+        (2)数据变动时使用【set】触发更新
+    2、react
+        (1)使用useState触发更新，无论数据是否改变
+        (2)有性能问题
+```
+
+## 14、ref
+```
+    1、用于获取DOM节点或者组件实例
+    2、获取组件时，只能获取类组件，函数组件没有实例
+    3、在挂载阶段获取ref
+```
+```js
+import React from 'react'
+
+// 1、声明标识变量
+let identify = React.createRef()
+let son = React.createRef()
+
+class Son extends React.Component {
+  f1 = () => {
+    console.log('调用子组件的方法');
+  }
+  render() {
+    return <div>子组件</div>
+  }
+}
+
+class App extends React.Component {
+  componentDidMount() {
+    // 3、获取DOM
+    console.log(identify.current);
+    console.log(son.current);
+    son.current.f1()
+  }
+  render() {
+    return (
+      // 2、打标识
+      <div ref={identify}><Son ref={son}/></div>
+    )
+  }
+}
+export default App;
+```
+
+## 15、context(类似于provide和inject)
+```
+    适用于跨级组件通信
+    1、声明公用的context组件
+    2、传递方：provide
+    3、接收方：
+      (1) consumer组件 + 作用域插槽
+      (2) 静态属性contextType + this.context
+```
+```js
+import React from 'react'
+
+// 1、声明context变量
+let Context = React.createContext()
+
+class GrandSon extends React.Component {
+  // 指定 contextType 读取 context
+  static contextType = Context;
+  render() {
+    return (
+      <>
+        <h4>孙子组件</h4>
+        {/* 3、使用方 */}
+        {/* (1)：consumer + 作用域插槽 */}
+        <Context.Consumer>
+          {(value) => <div>{ value}</div>}
+        </Context.Consumer>
+        {/* (2) 借助静态属性 使用 this.context 访问 */}
+        <div>{this.context}</div>
+      </>
+    )
+  }
+}
+
+class Son extends React.Component {
+  render() {
+    return (
+      <div>
+        <h3>子组件</h3>
+        <GrandSon/>
+      </div>
+    )
+  }
+}
+
+class App extends React.Component {
+  state = {
+    data: 'context 传递的数据'
+  }
+  
+  render() {
+    return (
+      <>
+        <h2>父组件</h2>
+        {/* 2、传递方：provide并传递value */}
+        <Context.Provider value={this.state.data}>
+          <Son />
+        </Context.Provider>
+      </>
+    )
+  }
+}
+
+export default App;
+```
+
+## 16、
