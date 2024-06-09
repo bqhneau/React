@@ -2,6 +2,15 @@
 
 
 ## 2、类组件和函数组件
+```
+    主要区别：
+      1、函数组件没有生命周期
+      2、函数组件没有this指向
+      3、函数组件没有状态
+      4、函数组件通过hooks实现各种操作
+      5、props在函数的第一个参数接收
+      6、函数体相当于类组件的render函数
+```
 ```js
 
 import React from 'react'
@@ -651,14 +660,16 @@ export default App;
 
 ### 9.1 受控组件(双向的)
 ```
-    1、表单的值可以获取，并可以由开发者靠代码去更改
+    1、表单的值可以获取【state】，并可以由开发者靠代码【setState】去更改
     2、可以通过设置state中的值改变表单中的值
+    3、将表单数据添加到state中，可以通过【state/setState】对数据进行获取和修改
 ```
 
-### 9.2 受控组件(单向的)
+### 9.2 受控组件(无状态的)
 ```
-    1、表单的值我们只能获取
+    1、表单的值我们只能获取【通过给输入框打标识获取】
     2、我们仅做了事件监听，没有设置 value/checked 属性
+    3、没有设置 state
 ```
 
 ### 9.3 关于复选框
@@ -882,6 +893,8 @@ export default App;
     2、获取组件时，只能获取类组件，函数组件没有实例
     3、在挂载阶段获取ref
 ```
+
+### 14.1 React.createref()
 ```js
 import React from 'react'
 
@@ -913,6 +926,38 @@ class App extends React.Component {
   }
 }
 export default App;
+```
+
+### 14.2 回调函数写法
+```
+		ref={(c)=>{this.input1=c}}
+      1、c 实际上为当前DOM实例
+      2、将 c 挂载到this上
+      3、并取名为 input1
+      4、这样便可以通过this.input1 拿到该 DOM
+```
+```js
+class Demo extends React.Component{
+			//展示左侧输入框的数据
+			showData = ()=>{
+				const {input1} = this
+				alert(input1.value)
+			}
+			//展示右侧输入框的数据
+			showData2 = ()=>{
+				const {input2} = this
+				alert(input2.value)
+			}
+			render(){
+				return(
+					<div>
+						<input ref={(a)=>{this.input1=a}} type="text" placeholder="点击按钮提示数据"/>&nbsp;
+						<button onClick={this.showData}>点我提示左侧的数据</button>&nbsp;
+						<input onBlur={this.showData2} ref={c => this.input2 = c } type="text" placeholder="失去焦点提示数据"/>&nbsp;
+					</div>
+				)
+			}
+		}
 ```
 
 ## 15、context(类似于provide和inject)
@@ -981,4 +1026,99 @@ class App extends React.Component {
 export default App;
 ```
 
-## 16、
+## 16、hooks
+
+### 16.1 useState
+```
+    1、让函数组件也可以有state状态, 并进行状态数据的读写操作
+    2、【语法】: 
+      const [xxx, setXxx] = React.useState(initValue)  
+    3、useState()说明:
+      【参数】: 第一次初始化指定的值在内部作缓存
+      【返回值】: 包含2个元素的数组, 第1个为内部当前状态值, 第2个为更新状态值的函数
+    4、setXxx()2种写法:
+      setXxx(newValue): 参数为非函数值, 直接指定新的状态值, 内部用其覆盖原来的状态值
+      setXxx(value => newValue): 参数为函数, 接收原本的状态值, 返回新的状态值, 内部用其覆盖原来的状态值
+```
+
+### 16.2 useEffect
+```
+  1、在函数组件中执行副作用操作(用于模拟类组件中的生命周期钩子)
+  2、React中的副作用操作:
+      发ajax请求数据获取
+      设置订阅 / 启动定时器
+      手动更改真实DOM
+  3、语法和说明: 
+      useEffect(() => { 
+        // update/mount
+        return () => { // 在组件卸载前执行
+          // 在此做一些收尾工作, 比如清除定时器/取消订阅等
+        }
+      }, [stateValue]) // 如果指定的是[], 回调函数只会在第一次render()后执行
+  4、可以把 useEffect Hook 看做如下三个函数的组合
+        componentDidMount()
+        componentDidUpdate()
+        componentWillUnmount() 
+  5、第二个参数填写依赖项 类似于【vue的监听】
+```
+
+### 16.3 useMemo
+```
+    1、用于优化函数组件性能，缓存【数据】，避免不必要的计算
+    2、相当于 vue 的【计算属性】
+    3、根据依赖项决定是否重新计算
+```
+
+### 16.4 useCallback
+```
+    1、用于优化函数组件性能，缓存【函数】，避免不必要的计算
+    2、相当于 vue 的【计算属性】
+    3、根据依赖项决定是否重新计算
+```
+
+### 16.5 useRef
+
+```
+    0、与【createRef】类似，只是声明标识变量的方式不同
+    1、用来获取DOM阶段
+    2、用来获取之前的数据
+    3、用来获取组件及组件身上的方法
+```
+
+### 16.6 useContext
+```js
+    1、创建context方式不变
+      const Context = React.createContext()
+    2、【使用方】useContext 直接接收值
+      let value = useContext(Context)
+```
+
+## 17、高阶组件 Hoc (类似于vue中混入)
+```
+    【用途】提取公用逻辑，实现复用
+```
+
+## 18、组件性能优化
+```
+    1、问题：父组件的更新会连带子组件一起更新
+    2、解决：diff算法 + 时间切片(部分更新，部分渲染)
+      (1) 将任务分为许多个执行单元
+      (2) 有时间 ？ 接着运行执行单元 ：交给浏览器更新
+    3、引入fiber数据结构
+      为了支持切片，引入此数据结构
+      (1) 支持组件切片
+      (2) 具有继续执行的能力(恢复上次进度)
+    4、我们能做的
+      (1) PureComponment
+          避免state修改为同样的值，触发更新
+      (2) Memo 结合 useMemo 、useCallback
+          包裹对象、数组、方法 避免子组件更新
+```
+
+## 19、组件库
+```
+    Ant Design
+      1、Button
+      2、Table 插槽
+      3、定制主题 ConfigProvider
+```
